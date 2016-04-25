@@ -1,23 +1,21 @@
-#include "AP_Math.h"
-#include "vector2.h"
 #include "intersection.h"
 
 /*
  * Compute the nearest intersection point of the
- * boundary with the ray starting from the input position
+ * polygon with the ray starting from the input position
  * and extending in the direction of the input direction.
  *
  * Returns the number of intersections.
  */
-unsigned boundary_intersection(Vector2f position, Vector2f direction, Vector2f *boundary, unsigned nvert, Vector2f &intersect) {
+unsigned poly_intersection(Vector2f position, Vector2f direction, Vector2f *poly, unsigned nvert, Vector2f &intersect) {
   unsigned i, j;
   unsigned num_intersects = 0;
   float distance = FLT_MAX;
   for (i = 0, j = nvert-1; i < nvert; j = i++) {
-    Vector2f start = boundary[j];
-    Vector2f end = boundary[i];
+    Vector2f start = poly[j];
+    Vector2f end = poly[i];
     if ((end - start) % (position - start) > 0) {
-      // lies to the inside plane of the current boundary segment
+      // lies to the inside plane of the current poly segment
       Vector2f next_intersect;
       if (intersection(position, direction, start, end - start, next_intersect)) {
 	float next_distance = (next_intersect - position).length();

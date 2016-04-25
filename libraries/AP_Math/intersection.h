@@ -8,8 +8,8 @@
  *
  * Returns the number of intersections.
  */
-unsigned boundary_intersection(Vector2f position, Vector2f direction,
-			       Vector2f *boundary, unsigned nvert, Vector2f &intersect);
+unsigned poly_intersection(Vector2f position, Vector2f direction,
+			   Vector2f *poly, unsigned nvert, Vector2f &intersect);
 
 /*
  * Compute the intersection between a ray (p,p + r) and a line segment (q, q + s).

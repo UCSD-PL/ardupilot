@@ -6,8 +6,8 @@
  */
 void AC_Avoid::adjust_velocity(Vector2f &desired_vel, const Vector2f position) {
   Vector2f intersect;
-  unsigned num_intersects = boundary_intersection(position, desired_vel, _boundary, _nvert, intersect);
-  if (num_intersects > 0 && num_intersects % 2 == 0) {
+  unsigned num_intersects = poly_intersection(position, desired_vel, _boundary, _nvert, intersect);
+  if (num_intersects > 0 && num_intersects % 2 == 1) {
     // Inside the fence
     float max_speed = get_max_speed((position - intersect).length());
     float desired_speed = desired_vel.length();
