@@ -12,11 +12,12 @@ unsigned poly_intersection(Vector2f position, Vector2f direction,
 			   Vector2f *poly, unsigned nvert, Vector2f &intersect);
 
 /*
- * Compute the intersection between a ray (p,p + r) and a line segment (q, q + s).
+ * Compute the intersection between a ray (p,p + r) and a line segment (q, q + s),
+ * excluding the point q + s.
  * Returns false if they do not intersect. Returns false if they are collinear.
  * Returns true otherwise.
  *
  * Implementation taken from
  * http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
  */
-bool intersection(Vector2f p, Vector2f r, Vector2f q, Vector2f s, Vector2f &intersect);
+bool simple_intersection(Vector2f p, Vector2f r, Vector2f q, Vector2f s, Vector2f &intersect);
