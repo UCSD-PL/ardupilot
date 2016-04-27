@@ -460,6 +460,8 @@ private:
     AC_AttitudeControl_Multi attitude_control;
 #endif
     AC_PosControl pos_control;
+    // Stop at fence library
+    AC_Avoid    stop_fence;
     AC_WPNav wp_nav;
     AC_Circle circle_nav;
 
@@ -498,11 +500,6 @@ private:
     // AC_Fence library to reduce fly-aways
 #if AC_FENCE == ENABLED
     AC_Fence    fence;
-#endif
-
-    // Stop at fence library
-#if AC_STOP_FENCE == ENABLED
-    AC_Avoid    stop_fence;
 #endif
 
     // Rally library
