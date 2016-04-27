@@ -45,10 +45,11 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel) {
  * of the vehicle will be exactly the input distance.
  */
 float AC_Avoid::get_max_speed(float distance) {
-  float linear_distance = _accel_cms/(2.0f*_kP*_kP);
-  if (distance < linear_distance) {
-    return distance*_kP;
-  } else {
-    return safe_sqrt((distance - linear_distance)*2.0f*_accel_cms);
-  }
+  return AC_AttitudeControl::sqrt_controller(distance,_kP,_accel_cms);
+  // float linear_distance = _accel_cms/(2.0f*_kP*_kP);
+  // if (distance < linear_distance) {
+  //   return distance*_kP;
+  // } else {
+  //   return safe_sqrt((distance - linear_distance)*2.0f*_accel_cms);
+  // }
 }
