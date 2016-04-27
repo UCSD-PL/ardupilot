@@ -51,6 +51,7 @@ LIBRARIES += AC_WPNav
 LIBRARIES += AC_Circle
 LIBRARIES += AP_Declination
 LIBRARIES += AC_Fence
+LIBRARIES += AC_Avoidance
 LIBRARIES += SITL
 LIBRARIES += AP_Scheduler
 LIBRARIES += AP_RCMapper
