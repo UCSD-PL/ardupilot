@@ -639,7 +639,11 @@
 
 // Enable/disable Fence
 #ifndef AC_FENCE
- #define AC_FENCE ENABLED
+ #define AC_FENCE DISABLED
+#endif
+
+#ifndef AC_STOP_FENCE
+ #define AC_STOP_FENCE ENABLED
 #endif
 
 #ifndef AC_RALLY
