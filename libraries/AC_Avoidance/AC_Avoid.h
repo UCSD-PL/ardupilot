@@ -5,6 +5,7 @@
 #include <AP_Math/intersection.h>
 
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
+#include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
 
 #define RECOVERY_SPEED 50
 
