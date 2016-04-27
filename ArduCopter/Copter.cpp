@@ -94,6 +94,7 @@ Copter::Copter(void) :
     pos_control(ahrs, inertial_nav, motors, attitude_control,
                 g.p_alt_hold, g.p_vel_z, g.pid_accel_z,
                 g.p_pos_xy, g.pi_vel_xy),
+    stop_fence(inertial_nav),
     wp_nav(inertial_nav, ahrs, pos_control, attitude_control, stop_fence),
     circle_nav(inertial_nav, ahrs, pos_control),
     pmTest1(0),
@@ -111,9 +112,6 @@ Copter::Copter(void) :
 #endif
 #if AC_FENCE == ENABLED
     fence(inertial_nav),
-#endif
-#if AC_STOP_FENCE == ENABLED
-    stop_fence(inertial_nav),
 #endif
 #if AC_RALLY == ENABLED
     rally(ahrs),
