@@ -1485,6 +1485,18 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #endif
             break;
 
+// #if AC_STOP_FENCE == ENABLED
+//         case MAVLINK_MSG_ID_FENCE_POINT:
+//             result = MAV_RESULT_ACCEPTED;
+//             mavlink_fence_point_t packet;
+//             mavlink_msg_fence_point_decode(msg, &packet);
+//             break;
+// #else
+//             // if fence code is not included return failure
+//             result = MAV_RESULT_FAILED;
+// #endif
+//             break;
+
 #if PARACHUTE == ENABLED
         case MAV_CMD_DO_PARACHUTE:
             // configure or release parachute
