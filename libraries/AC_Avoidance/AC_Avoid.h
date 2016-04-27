@@ -6,7 +6,7 @@
 
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 
-#define RECOVERY_SPEED 500
+#define RECOVERY_SPEED 50
 
 class AC_Avoid
 {
