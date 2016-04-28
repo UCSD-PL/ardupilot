@@ -7,8 +7,6 @@
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
 
-#define RECOVERY_SPEED 50
-
 class AC_Avoid
 {
  public:
@@ -31,10 +29,20 @@ class AC_Avoid
   float get_max_speed(float distance);
 
   const AP_InertialNav& _inav;
-  Vector2f _boundary[4] = {
+  /* Vector2f _boundary[4] = { */
+  /*   Vector2f(-1000, -1000), */
+  /*   Vector2f(1000, -1000), */
+  /*   Vector2f(1000, 1000), */
+  /*   Vector2f(-1000, 1000) */
+  /* }; */
+  Vector2f _boundary[8] = {
     Vector2f(-1000, -1000),
     Vector2f(1000, -1000),
     Vector2f(1000, 1000),
+    Vector2f(500, 1000),
+    Vector2f(500, 500),
+    Vector2f(-500, 500),
+    Vector2f(-500, 1000),
     Vector2f(-1000, 1000)
   };
   unsigned _nvert;
