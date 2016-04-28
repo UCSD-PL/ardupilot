@@ -7,6 +7,8 @@
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
 
+#define EPSILON 50.0f
+
 class AC_Avoid
 {
  public:
