@@ -54,14 +54,13 @@ class AC_Avoid
   /*   Vector2f(1000, 1000), */
   /*   Vector2f(-1000, 1000) */
   /* }; */
-  Vector2f _boundary[8] = {
+  Vector2f _boundary[7] = {
     Vector2f(-1000, -1000),
     Vector2f(1000, -1000),
     Vector2f(1000, 1000),
     Vector2f(500, 1000),
     Vector2f(500, 500),
     Vector2f(-500, 500),
-    Vector2f(-500, 1000),
     Vector2f(-1000, 1000)
   };
   unsigned _nvert;
