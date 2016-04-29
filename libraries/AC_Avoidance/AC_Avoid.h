@@ -22,6 +22,16 @@ class AC_Avoid
    */
   void adjust_velocity(Vector2f &desired_vel);
 
+  /*
+   * Tries to enable the geo-fence. Returns true if successful, false otherwise.
+   */
+  bool enable();
+
+  /*
+   * Disables the geo-fence
+   */
+  void disable();
+
  private:
 
   /*
@@ -51,5 +61,6 @@ class AC_Avoid
   Vector2f _inside_position;
   float _accel_cms;
   float _kP;
+  bool _enabled;
 
 };
