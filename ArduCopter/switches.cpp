@@ -244,6 +244,7 @@ void Copter::init_aux_switch_function(int8_t ch_option, uint8_t ch_flag)
         case AUXSW_RELAY:
         case AUXSW_LANDING_GEAR:
         case AUXSW_MOTOR_ESTOP:
+        case AUXSW_STOP_FENCE:
             do_aux_switch_function(ch_option, ch_flag);
             break;
 
@@ -586,6 +587,35 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
                 }
             }
             break;
+<<<<<<< HEAD
+=======
+
+        case AUXSW_THROW:
+            // throw flight mode
+            if (ch_flag == AUX_SWITCH_HIGH) {
+                set_mode(THROW, MODE_REASON_TX_COMMAND);
+            } else {
+                // return to flight mode switch's flight mode if we are currently in throw mode
+                if (control_mode == THROW) {
+                    reset_control_switch();
+                }
+            }
+            break;
+
+        case AUXSW_STOP_FENCE:
+            // enable or disable the stop fence
+            if (ch_flag == AUX_SWITCH_HIGH) {
+                if (stop_fence.enable()) {
+                    gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Enabled");
+                } else {
+                    gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Not Enabled");
+                }
+            }else{
+                stop_fence.disable();
+                gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Disabled");
+            }
+            break;            
+>>>>>>> Added ability to enable/disable fence.
     }
 }
 
