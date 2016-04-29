@@ -137,6 +137,8 @@ AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_PosContro
     _flags.recalc_wp_leash = false;
     _flags.new_wp_destination = false;
     _flags.segment_type = SEGMENT_STRAIGHT;
+
+    _stop_fence.set_breaking_accel_xy_cmss(_loiter_accel_cmss);
 }
 
 ///

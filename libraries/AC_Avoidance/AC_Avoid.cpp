@@ -1,12 +1,12 @@
 #include "AC_Avoid.h"
 
 /// Constructor
-AC_Avoid::AC_Avoid(const AP_InertialNav& inav)
+AC_Avoid::AC_Avoid(const AP_InertialNav& inav, AC_P& P)
   : _inav(inav),
     _nvert(sizeof(_boundary)/sizeof(*_boundary)),
     _inside_position(Vector2f(0,0)),
-    _accel_cms(250.0f),
-    _kP(1.0f),
+    _kP(P.kP()),
+    _accel_cmss(BREAKING_ACCEL_XY_CMSS),
     _enabled(false)
 {}
 
@@ -78,9 +78,17 @@ void AC_Avoid::disable() {
 }
 
 /*
+ * Sets the maximum x-y breaking acceleration.
+ */
+void AC_Avoid::set_breaking_accel_xy_cmss(float accel_cmss) {
+  _accel_cmss = accel_cmss;
+}
+
+
+/*
  * Computes the speed such that the stopping distance
  * of the vehicle will be exactly the input distance.
  */
 float AC_Avoid::get_max_speed(float distance) {
-  return AC_AttitudeControl::sqrt_controller(distance,_kP,_accel_cms);
+  return AC_AttitudeControl::sqrt_controller(distance,_kP,_accel_cmss);
 }
