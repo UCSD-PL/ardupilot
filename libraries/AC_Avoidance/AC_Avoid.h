@@ -6,15 +6,17 @@
 
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
+#include <AC_PID/AC_P.h>               // P library
 
 #define EPSILON 50.0f
+#define BREAKING_ACCEL_XY_CMSS 250.0f
 
 class AC_Avoid
 {
  public:
 
   /// Constructor
-  AC_Avoid(const AP_InertialNav& inav);
+  AC_Avoid(const AP_InertialNav& inav, AC_P& P);
 
   /*
    * Adjusts the desired velocity so that the vehicle can stop
@@ -31,6 +33,11 @@ class AC_Avoid
    * Disables the geo-fence
    */
   void disable();
+
+  /*
+   * Sets the maximum x-y breaking acceleration.
+   */
+  void set_breaking_accel_xy_cmss(float accel_cmss);
 
  private:
 
@@ -59,7 +66,7 @@ class AC_Avoid
   };
   unsigned _nvert;
   Vector2f _inside_position;
-  float _accel_cms;
+  float _accel_cmss;
   float _kP;
   bool _enabled;
 
