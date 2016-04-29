@@ -6,7 +6,8 @@ AC_Avoid::AC_Avoid(const AP_InertialNav& inav)
     _nvert(sizeof(_boundary)/sizeof(*_boundary)),
     _inside_position(Vector2f(0,0)),
     _accel_cms(250.0f),
-    _kP(1.0f)
+    _kP(1.0f),
+    _enabled(false)
 {}
 
 /*
@@ -14,6 +15,10 @@ AC_Avoid::AC_Avoid(const AP_InertialNav& inav)
  * before the fence/object.
  */
 void AC_Avoid::adjust_velocity(Vector2f &desired_vel) {
+  if (!_enabled) {
+    return;
+  }
+
   Vector3f position_xyz = _inav.get_position();
   Vector2f position_xy(position_xyz.x,position_xyz.y);
   Vector2f intersect;
@@ -45,6 +50,31 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel) {
       desired_vel.zero();
     }
   }
+}
+
+/*
+ * Tries to enable the geo-fence. Returns true if successful, false otherwise.
+ */
+bool AC_Avoid::enable() {
+  Vector3f position_xyz = _inav.get_position();
+  Vector2f position_xy(position_xyz.x,position_xyz.y);
+  Vector2f intersect;
+  unsigned num_intersects = poly_intersection(position_xy, Vector2f(1,0), _boundary, _nvert, intersect);
+  if (num_intersects % 2 == 1) {
+    // Inside the fence
+    _enabled = true;
+    _inside_position = position_xy;
+  } else {
+    _enabled = false;
+  }
+  return _enabled;
+}
+
+/*
+ * Disables the geo-fence
+ */
+void AC_Avoid::disable() {
+  _enabled = false;
 }
 
 /*
