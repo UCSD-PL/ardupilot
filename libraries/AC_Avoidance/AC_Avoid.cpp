@@ -22,9 +22,11 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel) {
   Vector3f position_xyz = _inav.get_position();
   Vector2f position_xy(position_xyz.x,position_xyz.y);
   Vector2f intersect;
+  // Find closest intersection with boundary and number of intersections
   unsigned num_intersects = poly_intersection(position_xy, desired_vel, _boundary, _nvert, intersect);
   if (num_intersects % 2 == 1) {
     // Inside the fence
+    // Don't exceed maximum allowable speed based on distance to boundary, using sqrt controller
     float max_speed = get_max_speed((position_xy - intersect).length());
     float desired_speed = desired_vel.length();
     if (desired_speed >= max_speed && desired_speed > 0) {
