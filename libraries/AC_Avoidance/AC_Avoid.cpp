@@ -33,14 +33,6 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel) {
       desired_vel *= max_speed/desired_speed;
     }
     _inside_position = position_xy;
-  } else if (num_intersects > 0 && (intersect - _inside_position).length() < EPSILON) {
-    // Outside the fence but trying to get back in near last known inside position
-    // Head inside at least as quickly as sqrt controller
-    float min_speed = get_max_speed((position_xy - intersect).length());
-    float desired_speed = desired_vel.length();
-    if (desired_speed < min_speed && desired_speed > 0) {
-      desired_vel *= min_speed/desired_speed;
-    }
   } else {
     // Outside the fence
     // Head towards last known inside position using sqrt controller.
