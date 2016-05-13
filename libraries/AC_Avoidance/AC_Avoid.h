@@ -2,7 +2,6 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/vector2.h>
-#include <AP_Math/intersection.h>
 
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
@@ -42,6 +41,15 @@ class AC_Avoid
  private:
 
   /*
+   * Limits the component of desired_vel in the direction of the unit vector
+   * limit_direction to be at most the maximum speed permitted by the limit_distance.
+   *
+   * Uses velocity adjustment idea from Randy's second email on this thread:
+   * https://groups.google.com/forum/#!searchin/drones-discuss/obstacle/drones-discuss/QwUXz__WuqY/qo3G8iTLSJAJ
+   */
+  void limit_velocity(Vector2f &desired_vel, const Vector2f limit_direction, const float limit_distance);
+
+  /*
    * Computes the speed such that the stopping distance
    * of the vehicle will be exactly the input distance.
    */
@@ -67,6 +75,7 @@ class AC_Avoid
   Vector2f _inside_position;
   float _accel_cmss;
   float _kP;
+  float _buffer;
   bool _enabled;
 
 };
