@@ -2,14 +2,18 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/vector2.h>
+#include <AP_Math/polygon.h>
 
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
 #include <AC_PID/AC_P.h>               // P library
 
-#define EPSILON 50.0f
 #define BREAKING_ACCEL_XY_CMSS 250.0f
 
+/*
+ * This class prevents the vehicle from leaving a polygon fence in
+ * 2 dimensions by limiting velocity (adjust_velocity).
+ */
 class AC_Avoid
 {
  public:
@@ -56,20 +60,22 @@ class AC_Avoid
   float get_max_speed(float distance);
 
   const AP_InertialNav& _inav;
-  /* Vector2f _boundary[4] = { */
+  /* Vector2f _boundary[5] = { */
   /*   Vector2f(-1000, -1000), */
   /*   Vector2f(1000, -1000), */
   /*   Vector2f(1000, 1000), */
-  /*   Vector2f(-1000, 1000) */
+  /*   Vector2f(-1000, 1000), */
+  /*   Vector2f(-1000, -1000) */
   /* }; */
-  Vector2f _boundary[7] = {
+  Vector2f _boundary[8] = {
     Vector2f(-1000, -1000),
     Vector2f(1000, -1000),
     Vector2f(1000, 1000),
     Vector2f(500, 1000),
     Vector2f(500, 500),
     Vector2f(-500, 500),
-    Vector2f(-1000, 1000)
+    Vector2f(-1000, 1000),
+    Vector2f(-1000, -1000)
   };
   unsigned _nvert;
   Vector2f _inside_position;
