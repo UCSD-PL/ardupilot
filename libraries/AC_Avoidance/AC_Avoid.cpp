@@ -47,25 +47,37 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel) {
     return;
   }
 
-  Vector3f position_xyz = _inav.get_position();
-  Vector2f position_xy(position_xyz.x,position_xyz.y);
+  const Vector3f position_xyz = _inav.get_position();
+  const Vector2f position_xy(position_xyz.x,position_xyz.y);
+  // Safe_vel will be adjusted to remain within fence.
+  // We need a separate vector in case adjustment fails,
+  // e.g. if we are exactly on the boundary.
+  Vector2f safe_vel(desired_vel);
 
-  // TODO: Only do the following if we are strictly inside the boundary
-
-  unsigned i, j;
-  for (i = 0, j = _nvert-1; i < _nvert; j = i++) {
-    Vector2f start = _boundary[j];
-    Vector2f end = _boundary[i];
-    Vector2f limit_direction = closest_point(position_xy, start, end) - position_xy;
-    const float limit_distance = limit_direction.length();
-    if (limit_distance != 0) {
-      limit_direction /= limit_distance;
-      limit_velocity(desired_vel, limit_direction, limit_distance);
+  if (!Polygon_outside(position_xy, _boundary, _nvert)) {
+    unsigned i, j;
+    for (i = 0, j = _nvert-1; i < _nvert; j = i++) {
+      // end points of current edge
+      Vector2f start = _boundary[j];
+      Vector2f end = _boundary[i];
+      // vector from current position to closest point on current edge
+      Vector2f limit_direction = closest_point(position_xy, start, end) - position_xy;
+      // distance to closest point
+      const float limit_distance = limit_direction.length();
+      if (limit_distance != 0) {
+	// We are strictly inside the given edge.
+	// Adjust velocity to not violate this edge.
+	limit_direction /= limit_distance;
+	limit_velocity(safe_vel, limit_direction, limit_distance);
+      } else {
+	// We are exactly on the edge - treat this as a fence breach.
+	// i.e. do not adjust velocity.
+	return;
+      }
     }
-    // If the limit distance is equal to the 0, then we are exactly on the
-    // boundary and should probably initiate failsafe
-  }
 
+    desired_vel = safe_vel;
+  }
 }
 
 /*
@@ -89,19 +101,13 @@ void AC_Avoid::limit_velocity(Vector2f &desired_vel, const Vector2f limit_direct
  * Tries to enable the geo-fence. Returns true if successful, false otherwise.
  */
 bool AC_Avoid::enable() {
-  // Vector3f position_xyz = _inav.get_position();
-  // Vector2f position_xy(position_xyz.x,position_xyz.y);
-  // Vector2f intersect;
-  // unsigned num_intersects = poly_intersection(position_xy, Vector2f(1,0), _boundary, _nvert, intersect);
-  // if (num_intersects % 2 == 1) {
-  //   // Inside the fence
-  //   _enabled = true;
-  //   _inside_position = position_xy;
-  // } else {
-  //   _enabled = false;
-  // }
-  // TODO: Check if actually inside fence
-  _enabled = true;
+  const Vector3f position_xyz = _inav.get_position();
+  const Vector2f position_xy(position_xyz.x,position_xyz.y);
+  if (Polygon_outside(position_xy, _boundary, _nvert)) {
+    _enabled = false;
+  } else {
+    _enabled = true;
+  }
   return _enabled;
 }
 
