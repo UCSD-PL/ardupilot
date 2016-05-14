@@ -592,15 +592,15 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
             // enable or disable the stop fence
             if (ch_flag == AUX_SWITCH_HIGH) {
                 if (stop_fence.enable()) {
-                    gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Enabled");
+                    gcs_send_text_P(SEVERITY_CRITICAL, PSTR("Fence Enabled"));
                 } else {
-                    gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Not Enabled");
+                    gcs_send_text_P(SEVERITY_CRITICAL, PSTR("Fence Not Enabled"));
                 }
-            }else{
+            } else {
                 stop_fence.disable();
-                gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Disabled");
+                gcs_send_text_P(SEVERITY_CRITICAL, PSTR("Fence Disabled"));
             }
-            break;            
+            break;
     }
 }
 
