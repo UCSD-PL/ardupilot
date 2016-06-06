@@ -1,5 +1,7 @@
 #include "AC_Avoid.h"
 
+#include <AP_HAL/AP_HAL.h>
+
 /// Constructor
 AC_Avoid::AC_Avoid(const AP_InertialNav& inav, AC_P& P)
     : _inav(inav),
@@ -8,8 +10,11 @@ AC_Avoid::AC_Avoid(const AP_InertialNav& inav, AC_P& P)
       _kP(P.kP()),
       _accel_cmss(BREAKING_ACCEL_XY_CMSS),
       _buffer(100.0f),
-      _enabled(false)
-{}
+      _enabled(false),
+      _fence_radius(1000.0f)
+{
+  _enabled_fences.set(AC_AVOID_TYPE_CIRCLE);
+}
 
 /*
  * Returns the point closest to p on the line segment (v,w).
@@ -39,16 +44,51 @@ static Vector2f closest_point(Vector2f p, Vector2f v, Vector2f w)
     }
 }
 
-/*
- * Adjusts the desired velocity so that the vehicle can stop
- * before the fence/object.
- */
 void AC_Avoid::adjust_velocity(Vector2f &desired_vel)
 {
-    if (!_enabled) {
-        return;
-    }
+  if (!_enabled) {
+    return;
+  }
 
+  if (_enabled_fences == AC_AVOID_TYPE_POLY) {
+    adjust_velocity_poly(desired_vel);
+  } else if (_enabled_fences == AC_AVOID_TYPE_CIRCLE) {
+    adjust_velocity_circle(desired_vel);
+  }
+}
+
+/*
+ * Adjusts the desired velocity for the circular fence.
+ */
+void AC_Avoid::adjust_velocity_circle(Vector2f &desired_vel)
+{
+  const Vector3f position_xyz = _inav.get_position();
+  const Vector2f position_xy(position_xyz.x,position_xyz.y);
+
+  float speed = desired_vel.length();
+
+  if (!is_zero(speed) && position_xy.length() <= _fence_radius) {
+    // Currently inside circular fence
+    Vector2f stopping_point = position_xy + desired_vel*(get_stopping_distance(speed)/speed);
+    float stopping_point_length = stopping_point.length();
+    if (stopping_point_length > _fence_radius - _buffer) {
+      // Unsafe desired velocity - will not be able to stop before fence breach
+      // Project stopping point radially onto fence boundary
+      // Adjusted velocity will point towards this projected point at a safe speed
+      Vector2f target = stopping_point * ((_fence_radius - _buffer) / stopping_point_length);
+      Vector2f target_direction = target - position_xy;
+      float distance_to_target = target_direction.length();
+      float max_speed = get_max_speed(distance_to_target);
+      desired_vel = target_direction * (MIN(speed,max_speed) / distance_to_target);
+    }
+  }
+}
+
+/*
+ * Adjusts the desired velocity for the polygon fence.
+ */
+void AC_Avoid::adjust_velocity_poly(Vector2f &desired_vel)
+{
     const Vector3f position_xyz = _inav.get_position();
     const Vector2f position_xy(position_xyz.x,position_xyz.y);
     // Safe_vel will be adjusted to remain within fence.
@@ -91,7 +131,7 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel)
  */
 void AC_Avoid::limit_velocity(Vector2f &desired_vel, const Vector2f limit_direction, const float limit_distance)
 {
-    const float max_speed = get_max_speed(limit_distance);
+    const float max_speed = get_max_speed(limit_distance - _buffer);
     // project onto limit direction
     const float speed = desired_vel * limit_direction;
     if (speed > max_speed) {
@@ -105,14 +145,22 @@ void AC_Avoid::limit_velocity(Vector2f &desired_vel, const Vector2f limit_direct
  */
 bool AC_Avoid::enable()
 {
-    const Vector3f position_xyz = _inav.get_position();
-    const Vector2f position_xy(position_xyz.x,position_xyz.y);
+  const Vector3f position_xyz = _inav.get_position();
+  const Vector2f position_xy(position_xyz.x,position_xyz.y);
+
+  if (_enabled_fences == AC_AVOID_TYPE_POLY) {
     if (Polygon_outside(position_xy, _boundary, _nvert)) {
-        _enabled = false;
+      _enabled = false;
     } else {
-        _enabled = true;
+      _enabled = true;
     }
-    return _enabled;
+  } else if (_enabled_fences == AC_AVOID_TYPE_CIRCLE) {
+    _enabled = position_xy.length() <= _fence_radius;
+  } else {
+    _enabled = false;
+  }
+
+  return _enabled;
 }
 
 /*
@@ -138,5 +186,29 @@ void AC_Avoid::set_breaking_accel_xy_cmss(float accel_cmss)
  */
 float AC_Avoid::get_max_speed(float distance)
 {
-    return AC_AttitudeControl::sqrt_controller(distance - _buffer,_kP,_accel_cmss);
+    return AC_AttitudeControl::sqrt_controller(distance,_kP,_accel_cmss);
+}
+
+/*
+ * Computes distance required to stop, given current speed.
+ *
+ * Implementation copied from AC_PosControl.
+ */
+float AC_Avoid::get_stopping_distance(float speed)
+{
+  // avoid divide by zero by using current position if the velocity is below 10cm/s, kP is very low or acceleration is zero
+  if (_kP <= 0.0f || _accel_cmss <= 0.0f || is_zero(speed)) {
+    return 0.0f;
+  }
+
+  // calculate point at which velocity switches from linear to sqrt
+  float linear_speed = _accel_cmss/_kP;
+
+  // calculate distance within which we can stop
+  if (speed < linear_speed) {
+    return speed/_kP;
+  } else {
+    float linear_distance = _accel_cmss/(2.0f*_kP*_kP);
+    return linear_distance + (speed*speed)/(2.0f*_accel_cmss);
+  }
 }

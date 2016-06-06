@@ -1,5 +1,6 @@
 #pragma once
 
+#include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/vector2.h>
 #include <AP_Math/polygon.h>
@@ -9,6 +10,11 @@
 #include <AC_PID/AC_P.h>               // P library
 
 #define BREAKING_ACCEL_XY_CMSS 250.0f
+
+// bit masks for enabled fence types.
+#define AC_AVOID_TYPE_NONE                          0       // fence disabled
+#define AC_AVOID_TYPE_POLY                          1       // horizontal polygon fence
+#define AC_AVOID_TYPE_CIRCLE                        2       // circular horizontal fence
 
 /*
  * This class prevents the vehicle from leaving a polygon fence in
@@ -44,6 +50,16 @@ public:
 private:
 
     /*
+     * Adjusts the desired velocity for the polygon fence.
+     */
+    void adjust_velocity_poly(Vector2f &desired_vel);
+
+    /*
+     * Adjusts the desired velocity for the circular fence.
+     */
+    void adjust_velocity_circle(Vector2f &desired_vel);
+
+    /*
      * Limits the component of desired_vel in the direction of the unit vector
      * limit_direction to be at most the maximum speed permitted by the limit_distance.
      *
@@ -57,6 +73,11 @@ private:
      * of the vehicle will be exactly the input distance.
      */
     float get_max_speed(float distance);
+
+    /*
+     * Computes distance required to stop, given current speed.
+     */
+    float get_stopping_distance(float speed);
 
     const AP_InertialNav& _inav;
     /* Vector2f _boundary[5] = { */
@@ -82,5 +103,6 @@ private:
     float _kP;
     float _buffer;
     bool _enabled;
-
+    AP_Int8 _enabled_fences;
+    float _fence_radius;
 };
