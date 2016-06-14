@@ -1,19 +1,29 @@
 #include "AC_Avoid.h"
 
-#include <AP_HAL/AP_HAL.h>
+const AP_Param::GroupInfo AC_Avoid::var_info[] = {
+
+  // @Param: TYPE
+  // @DisplayName: Fence Type
+  // @Description: Enabled fence types held as bitmask
+  // @Values: 0:None,1:Polygon,2:Circle
+  // @User: Standard
+  AP_GROUPINFO("TYPE",        0,  AC_Avoid,   _enabled_fences,  AC_AVOID_TYPE_CIRCLE),
+
+  AP_GROUPEND
+
+};
 
 /// Constructor
 AC_Avoid::AC_Avoid(const AP_InertialNav& inav, AC_P& P)
     : _inav(inav),
       _nvert(sizeof(_boundary)/sizeof(*_boundary)),
-      _inside_position(Vector2f(0,0)),
       _kP(P.kP()),
       _accel_cmss(BREAKING_ACCEL_XY_CMSS),
       _buffer(100.0f),
       _enabled(false),
       _fence_radius(1000.0f)
 {
-  _enabled_fences.set(AC_AVOID_TYPE_CIRCLE);
+  AP_Param::setup_object_defaults(this, var_info);
 }
 
 /*

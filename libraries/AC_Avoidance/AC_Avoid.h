@@ -47,6 +47,8 @@ public:
      */
     void set_breaking_accel_xy_cmss(float accel_cmss);
 
+    static const struct AP_Param::GroupInfo var_info[];
+
 private:
 
     /*
@@ -98,7 +100,6 @@ private:
         Vector2f(-1000, -1000)
     };
     unsigned _nvert;
-    Vector2f _inside_position;
     float _accel_cmss;
     float _kP;
     float _buffer;
