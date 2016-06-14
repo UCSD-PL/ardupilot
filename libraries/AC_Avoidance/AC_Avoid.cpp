@@ -36,7 +36,7 @@ static Vector2f closest_point(Vector2f p, Vector2f v, Vector2f w)
 {
     // length squared of line segment
     const float l2 = (v - w).length_squared();
-    if (l2 == 0.0) {
+    if (is_zero(l2)) {
         // v == w case
         return v;
     }
@@ -116,7 +116,7 @@ void AC_Avoid::adjust_velocity_poly(Vector2f &desired_vel)
             Vector2f limit_direction = closest_point(position_xy, start, end) - position_xy;
             // distance to closest point
             const float limit_distance = limit_direction.length();
-            if (limit_distance != 0) {
+            if (!is_zero(limit_distance)) {
                 // We are strictly inside the given edge.
                 // Adjust velocity to not violate this edge.
                 limit_direction /= limit_distance;
