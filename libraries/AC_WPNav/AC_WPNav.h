@@ -55,7 +55,7 @@ public:
     };
 
     /// Constructor
-    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, AC_Avoid& stop_fence);
+    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, AC_Avoid& avoid);
 
     /// provide pointer to terrain database
     void set_terrain(AP_Terrain* terrain_ptr) { _terrain = terrain_ptr; }
@@ -316,7 +316,7 @@ protected:
     AC_PosControl&          _pos_control;
     const AC_AttitudeControl& _attitude_control;
     AP_Terrain              *_terrain = NULL;
-    AC_Avoid& _stop_fence;
+    AC_Avoid& _avoid;
 
     // parameters
     AP_Float    _loiter_speed_cms;      // maximum horizontal speed in cm/s while in loiter

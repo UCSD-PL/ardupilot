@@ -461,7 +461,7 @@ private:
 #endif
     AC_PosControl pos_control;
     // Stop at fence library
-    AC_Avoid    stop_fence;
+    AC_Avoid    avoid;
     AC_WPNav wp_nav;
     AC_Circle circle_nav;
 

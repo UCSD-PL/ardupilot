@@ -4,10 +4,13 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Math/vector2.h>
 #include <AP_Math/polygon.h>
+#include <AP_Math/location.h>
 
 #include <AP_InertialNav/AP_InertialNav.h>     // Inertial Navigation library
+#include <AP_AHRS/AP_AHRS.h>     // AHRS library
 #include <AC_AttitudeControl/AC_AttitudeControl.h> // Attitude controller library for sqrt controller
 #include <AC_PID/AC_P.h>               // P library
+#include <AC_Fence/AC_Fence.h>         // Failsafe fence library
 
 #define BREAKING_ACCEL_XY_CMSS 250.0f
 
@@ -24,28 +27,13 @@ class AC_Avoid {
 public:
 
     /// Constructor
-    AC_Avoid(const AP_InertialNav& inav, AC_P& P);
+    AC_Avoid(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_P& P, const AC_Fence& fence);
 
     /*
      * Adjusts the desired velocity so that the vehicle can stop
      * before the fence/object.
      */
-    void adjust_velocity(Vector2f &desired_vel);
-
-    /*
-     * Tries to enable the geo-fence. Returns true if successful, false otherwise.
-     */
-    bool enable();
-
-    /*
-     * Disables the geo-fence
-     */
-    void disable();
-
-    /*
-     * Sets the maximum x-y breaking acceleration.
-     */
-    void set_breaking_accel_xy_cmss(float accel_cmss);
+    void adjust_velocity(Vector2f &desired_vel, const float accel_cmss);
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -71,17 +59,23 @@ private:
     void limit_velocity(Vector2f &desired_vel, const Vector2f limit_direction, const float limit_distance);
 
     /*
+     * Gets the current position, relative to home (not relative to EKF origin)
+     */
+    Vector2f get_position();
+
+    /*
      * Computes the speed such that the stopping distance
      * of the vehicle will be exactly the input distance.
      */
-    float get_max_speed(float distance);
+    float get_max_speed(const float distance);
 
     /*
      * Computes distance required to stop, given current speed.
      */
-    float get_stopping_distance(float speed);
+    float get_stopping_distance(const float speed);
 
     const AP_InertialNav& _inav;
+    const AP_AHRS& _ahrs;
     /* Vector2f _boundary[5] = { */
     /*   Vector2f(-1000, -1000), */
     /*   Vector2f(1000, -1000), */
@@ -100,10 +94,8 @@ private:
         Vector2f(-1000, -1000)
     };
     unsigned _nvert;
-    float _accel_cmss;
     float _kP;
-    float _buffer;
-    bool _enabled;
+    float _accel_cmss;
     AP_Int8 _enabled_fences;
-    float _fence_radius;
+    const AC_Fence& _fence;
 };

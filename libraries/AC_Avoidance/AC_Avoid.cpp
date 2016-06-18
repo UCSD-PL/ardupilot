@@ -2,28 +2,27 @@
 
 const AP_Param::GroupInfo AC_Avoid::var_info[] = {
 
-  // @Param: TYPE
-  // @DisplayName: Fence Type
-  // @Description: Enabled fence types held as bitmask
-  // @Values: 0:None,1:Polygon,2:Circle
-  // @User: Standard
-  AP_GROUPINFO("TYPE",        0,  AC_Avoid,   _enabled_fences,  AC_AVOID_TYPE_CIRCLE),
+    // @Param: TYPE
+    // @DisplayName: Fence Type
+    // @Description: Enabled fence types held as bitmask
+    // @Values: 0:None,1:Polygon,2:Circle
+    // @User: Standard
+    AP_GROUPINFO("TYPE",        0,  AC_Avoid,   _enabled_fences,  AC_AVOID_TYPE_CIRCLE),
 
-  AP_GROUPEND
+    AP_GROUPEND
 
 };
 
 /// Constructor
-AC_Avoid::AC_Avoid(const AP_InertialNav& inav, AC_P& P)
+AC_Avoid::AC_Avoid(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_P& P, const AC_Fence& fence)
     : _inav(inav),
+      _ahrs(ahrs),
       _nvert(sizeof(_boundary)/sizeof(*_boundary)),
       _kP(P.kP()),
       _accel_cmss(BREAKING_ACCEL_XY_CMSS),
-      _buffer(100.0f),
-      _enabled(false),
-      _fence_radius(1000.0f)
+      _fence(fence)
 {
-  AP_Param::setup_object_defaults(this, var_info);
+    AP_Param::setup_object_defaults(this, var_info);
 }
 
 /*
@@ -54,17 +53,15 @@ static Vector2f closest_point(Vector2f p, Vector2f v, Vector2f w)
     }
 }
 
-void AC_Avoid::adjust_velocity(Vector2f &desired_vel)
+void AC_Avoid::adjust_velocity(Vector2f &desired_vel, const float accel_cmss)
 {
-  if (!_enabled) {
-    return;
-  }
+    _accel_cmss = accel_cmss;
 
-  if (_enabled_fences == AC_AVOID_TYPE_POLY) {
-    adjust_velocity_poly(desired_vel);
-  } else if (_enabled_fences == AC_AVOID_TYPE_CIRCLE) {
-    adjust_velocity_circle(desired_vel);
-  }
+    if (_enabled_fences == AC_AVOID_TYPE_POLY) {
+        adjust_velocity_poly(desired_vel);
+    } else if (_enabled_fences == AC_AVOID_TYPE_CIRCLE) {
+        adjust_velocity_circle(desired_vel);
+    }
 }
 
 /*
@@ -72,26 +69,28 @@ void AC_Avoid::adjust_velocity(Vector2f &desired_vel)
  */
 void AC_Avoid::adjust_velocity_circle(Vector2f &desired_vel)
 {
-  const Vector3f position_xyz = _inav.get_position();
-  const Vector2f position_xy(position_xyz.x,position_xyz.y);
+    const Vector2f position_xy = get_position();
 
-  float speed = desired_vel.length();
+    float speed = desired_vel.length();
+    // get the fence radius in cm
+    const float fence_radius = _fence.get_radius() * 100.0f;
+    const float buffer = _fence.get_margin() * 100.0f;
 
-  if (!is_zero(speed) && position_xy.length() <= _fence_radius) {
-    // Currently inside circular fence
-    Vector2f stopping_point = position_xy + desired_vel*(get_stopping_distance(speed)/speed);
-    float stopping_point_length = stopping_point.length();
-    if (stopping_point_length > _fence_radius - _buffer) {
-      // Unsafe desired velocity - will not be able to stop before fence breach
-      // Project stopping point radially onto fence boundary
-      // Adjusted velocity will point towards this projected point at a safe speed
-      Vector2f target = stopping_point * ((_fence_radius - _buffer) / stopping_point_length);
-      Vector2f target_direction = target - position_xy;
-      float distance_to_target = target_direction.length();
-      float max_speed = get_max_speed(distance_to_target);
-      desired_vel = target_direction * (MIN(speed,max_speed) / distance_to_target);
+    if (!is_zero(speed) && position_xy.length() <= fence_radius) {
+        // Currently inside circular fence
+        Vector2f stopping_point = position_xy + desired_vel*(get_stopping_distance(speed)/speed);
+        float stopping_point_length = stopping_point.length();
+        if (stopping_point_length > fence_radius - buffer) {
+            // Unsafe desired velocity - will not be able to stop before fence breach
+            // Project stopping point radially onto fence boundary
+            // Adjusted velocity will point towards this projected point at a safe speed
+            Vector2f target = stopping_point * ((fence_radius - buffer) / stopping_point_length);
+            Vector2f target_direction = target - position_xy;
+            float distance_to_target = target_direction.length();
+            float max_speed = get_max_speed(distance_to_target);
+            desired_vel = target_direction * (MIN(speed,max_speed) / distance_to_target);
+        }
     }
-  }
 }
 
 /*
@@ -99,8 +98,7 @@ void AC_Avoid::adjust_velocity_circle(Vector2f &desired_vel)
  */
 void AC_Avoid::adjust_velocity_poly(Vector2f &desired_vel)
 {
-    const Vector3f position_xyz = _inav.get_position();
-    const Vector2f position_xy(position_xyz.x,position_xyz.y);
+    const Vector2f position_xy = get_position();
     // Safe_vel will be adjusted to remain within fence.
     // We need a separate vector in case adjustment fails,
     // e.g. if we are exactly on the boundary.
@@ -141,7 +139,7 @@ void AC_Avoid::adjust_velocity_poly(Vector2f &desired_vel)
  */
 void AC_Avoid::limit_velocity(Vector2f &desired_vel, const Vector2f limit_direction, const float limit_distance)
 {
-    const float max_speed = get_max_speed(limit_distance - _buffer);
+    const float max_speed = get_max_speed(limit_distance - _fence.get_margin());
     // project onto limit direction
     const float speed = desired_vel * limit_direction;
     if (speed > max_speed) {
@@ -151,50 +149,21 @@ void AC_Avoid::limit_velocity(Vector2f &desired_vel, const Vector2f limit_direct
 }
 
 /*
- * Tries to enable the geo-fence. Returns true if successful, false otherwise.
+ * Gets the current xy-position, relative to home (not relative to EKF origin)
  */
-bool AC_Avoid::enable()
+Vector2f AC_Avoid::get_position()
 {
-  const Vector3f position_xyz = _inav.get_position();
-  const Vector2f position_xy(position_xyz.x,position_xyz.y);
-
-  if (_enabled_fences == AC_AVOID_TYPE_POLY) {
-    if (Polygon_outside(position_xy, _boundary, _nvert)) {
-      _enabled = false;
-    } else {
-      _enabled = true;
-    }
-  } else if (_enabled_fences == AC_AVOID_TYPE_CIRCLE) {
-    _enabled = position_xy.length() <= _fence_radius;
-  } else {
-    _enabled = false;
-  }
-
-  return _enabled;
+    const Vector3f position_xyz = _inav.get_position();
+    const Vector2f position_xy(position_xyz.x,position_xyz.y);
+    const Vector2f diff = location_diff(_inav.get_origin(),_ahrs.get_home());
+    return position_xy + diff;
 }
-
-/*
- * Disables the geo-fence
- */
-void AC_Avoid::disable()
-{
-    _enabled = false;
-}
-
-/*
- * Sets the maximum x-y breaking acceleration.
- */
-void AC_Avoid::set_breaking_accel_xy_cmss(float accel_cmss)
-{
-    _accel_cmss = accel_cmss;
-}
-
 
 /*
  * Computes the speed such that the stopping distance
  * of the vehicle will be exactly the input distance.
  */
-float AC_Avoid::get_max_speed(float distance)
+float AC_Avoid::get_max_speed(const float distance)
 {
     return AC_AttitudeControl::sqrt_controller(distance,_kP,_accel_cmss);
 }
@@ -204,21 +173,21 @@ float AC_Avoid::get_max_speed(float distance)
  *
  * Implementation copied from AC_PosControl.
  */
-float AC_Avoid::get_stopping_distance(float speed)
+float AC_Avoid::get_stopping_distance(const float speed)
 {
-  // avoid divide by zero by using current position if the velocity is below 10cm/s, kP is very low or acceleration is zero
-  if (_kP <= 0.0f || _accel_cmss <= 0.0f || is_zero(speed)) {
-    return 0.0f;
-  }
+    // avoid divide by zero by using current position if the velocity is below 10cm/s, kP is very low or acceleration is zero
+    if (_kP <= 0.0f || _accel_cmss <= 0.0f || is_zero(speed)) {
+        return 0.0f;
+    }
 
-  // calculate point at which velocity switches from linear to sqrt
-  float linear_speed = _accel_cmss/_kP;
+    // calculate point at which velocity switches from linear to sqrt
+    float linear_speed = _accel_cmss/_kP;
 
-  // calculate distance within which we can stop
-  if (speed < linear_speed) {
-    return speed/_kP;
-  } else {
-    float linear_distance = _accel_cmss/(2.0f*_kP*_kP);
-    return linear_distance + (speed*speed)/(2.0f*_accel_cmss);
-  }
+    // calculate distance within which we can stop
+    if (speed < linear_speed) {
+        return speed/_kP;
+    } else {
+        float linear_distance = _accel_cmss/(2.0f*_kP*_kP);
+        return linear_distance + (speed*speed)/(2.0f*_accel_cmss);
+    }
 }

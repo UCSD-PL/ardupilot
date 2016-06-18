@@ -238,7 +238,6 @@ void Copter::init_aux_switch_function(int8_t ch_option, uint8_t ch_flag)
         case AUXSW_LANDING_GEAR:
         case AUXSW_MOTOR_ESTOP:
         case AUXSW_MOTOR_INTERLOCK:
-        case AUXSW_STOP_FENCE:
             do_aux_switch_function(ch_option, ch_flag);
             break;
     }
@@ -603,19 +602,6 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
             }
             break;
 
-        case AUXSW_STOP_FENCE:
-            // enable or disable the stop fence
-            if (ch_flag == AUX_SWITCH_HIGH) {
-                if (stop_fence.enable()) {
-                    gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Enabled");
-                } else {
-                    gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Not Enabled");
-                }
-            }else{
-                stop_fence.disable();
-                gcs_send_text(MAV_SEVERITY_CRITICAL, "Fence Disabled");
-            }
-            break;            
     }
 }
 

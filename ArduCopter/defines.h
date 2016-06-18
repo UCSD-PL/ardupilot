@@ -68,7 +68,6 @@ enum aux_sw_func {
     AUXSW_RELAY3 =              35, // Relay3 pin on/off (in Mission planner set CH9_OPT  = 35)
     AUXSW_RELAY4 =              36, // Relay4 pin on/off (in Mission planner set CH10_OPT = 36)
     AUXSW_THROW =               37, // change to THROW flight mode
-    AUXSW_STOP_FENCE =          38  // enabled/disable stop at fence
 };
 
 // Frame types

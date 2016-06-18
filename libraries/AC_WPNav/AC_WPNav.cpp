@@ -104,12 +104,12 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
 // Note that the Vector/Matrix constructors already implicitly zero
 // their values.
 //
-AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, AC_Avoid& stop_fence) :
+AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, AC_Avoid& avoid) :
     _inav(inav),
     _ahrs(ahrs),
     _pos_control(pos_control),
     _attitude_control(attitude_control),
-    _stop_fence(stop_fence),
+    _avoid(avoid),
     _loiter_step(0),
     _pilot_accel_fwd_cms(0),
     _pilot_accel_rgt_cms(0),
@@ -138,7 +138,6 @@ AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS& ahrs, AC_PosContro
     _flags.new_wp_destination = false;
     _flags.segment_type = SEGMENT_STRAIGHT;
 
-    _stop_fence.set_breaking_accel_xy_cmss(_loiter_accel_cmss);
 }
 
 ///
@@ -308,7 +307,7 @@ void AC_WPNav::calc_loiter_desired_velocity(float nav_dt, float ekfGndSpdLimit)
     }
 
     // Limit the velocity to prevent fence violations
-    _stop_fence.adjust_velocity(desired_vel);
+    _avoid.adjust_velocity(desired_vel, _loiter_accel_cmss);
 
     // send adjusted feed forward velocity back to position controller
     _pos_control.set_desired_velocity_xy(desired_vel.x,desired_vel.y);
