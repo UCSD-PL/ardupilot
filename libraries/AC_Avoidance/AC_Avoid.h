@@ -74,6 +74,16 @@ private:
      */
     float get_stopping_distance(const float speed);
 
+    /*
+     * Gets the fence radius in cm
+     */
+    float get_radius() { return _fence.get_radius() * 100.0f; }
+
+    /*
+     * Gets the fence margin in cm
+     */
+    float get_margin() { return _fence.get_margin() * 100.0f; }
+
     const AP_InertialNav& _inav;
     const AP_AHRS& _ahrs;
     /* Vector2f _boundary[5] = { */

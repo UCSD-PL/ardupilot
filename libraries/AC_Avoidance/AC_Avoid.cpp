@@ -73,18 +73,19 @@ void AC_Avoid::adjust_velocity_circle(Vector2f &desired_vel)
 
     float speed = desired_vel.length();
     // get the fence radius in cm
-    const float fence_radius = _fence.get_radius() * 100.0f;
-    const float buffer = _fence.get_margin() * 100.0f;
+    const float fence_radius = get_radius();
+    // get the margin to the fence in cm
+    const float margin = get_margin();
 
     if (!is_zero(speed) && position_xy.length() <= fence_radius) {
         // Currently inside circular fence
         Vector2f stopping_point = position_xy + desired_vel*(get_stopping_distance(speed)/speed);
         float stopping_point_length = stopping_point.length();
-        if (stopping_point_length > fence_radius - buffer) {
+        if (stopping_point_length > fence_radius - margin) {
             // Unsafe desired velocity - will not be able to stop before fence breach
             // Project stopping point radially onto fence boundary
             // Adjusted velocity will point towards this projected point at a safe speed
-            Vector2f target = stopping_point * ((fence_radius - buffer) / stopping_point_length);
+            Vector2f target = stopping_point * ((fence_radius - margin) / stopping_point_length);
             Vector2f target_direction = target - position_xy;
             float distance_to_target = target_direction.length();
             float max_speed = get_max_speed(distance_to_target);
@@ -139,7 +140,7 @@ void AC_Avoid::adjust_velocity_poly(Vector2f &desired_vel)
  */
 void AC_Avoid::limit_velocity(Vector2f &desired_vel, const Vector2f limit_direction, const float limit_distance)
 {
-    const float max_speed = get_max_speed(limit_distance - _fence.get_margin());
+    const float max_speed = get_max_speed(limit_distance - get_margin());
     // project onto limit direction
     const float speed = desired_vel * limit_direction;
     if (speed > max_speed) {
